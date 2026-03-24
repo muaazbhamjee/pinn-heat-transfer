@@ -7,8 +7,32 @@ HeatNet  — shared fully-connected backbone (6 inputs → 1 output)
 ANN      — data-driven model, MSE loss against FDM data
 PINN     — physics-informed model, composite loss via autograd
 
-Both models share identical architecture. The only difference is the
-loss function — which is the central pedagogical point of this project.
+Key design decisions
+--------------------
+1. OUTPUT NORMALISATION
+   The network internally predicts a normalised temperature:
+       θ = (T - T_INITIAL) / DELTA_T  ∈ [0, 1]
+
+   forward() reconstructs and returns physical temperature:
+       T = θ * DELTA_T + T_INITIAL  [K]
+
+   With Xavier initialisation, the network initially outputs θ ≈ 0,
+   so T ≈ T_INITIAL everywhere. This:
+     - Naturally satisfies the initial condition (T_initial at t=0)
+     - Gives a physically meaningful starting point for training
+     - Prevents the trivial solution T=constant (near 0 K) from occurring
+     - Ensures BC loss drives training from the start
+
+2. LOSS WEIGHTS
+   The default PINN weights are λ_bc = λ_ic = 10, λ_pde = 1.
+   With output normalisation, the IC loss starts near zero and the BC
+   loss starts near 1.0. Higher BC/IC weights ensure the boundary and
+   initial conditions are enforced before the PDE residual is reduced.
+
+3. SHARED ARCHITECTURE
+   Both ANN and PINN share identical architecture — a fully-connected
+   network with tanh activations and Xavier initialisation. The only
+   difference is the loss function.
 """
 
 import torch
@@ -32,10 +56,15 @@ class HeatNet(nn.Module):
     Architecture
     ------------
     Input  : (x̂, ŷ, t̂, ρ̂, ĉ_p, k̂)  — 6 normalised inputs
-    Hidden : n_hidden layers of n_neurons neurons each
-    Output : T [K]                      — 1 neuron (unnormalised)
-    Activ. : tanh — smooth, infinitely differentiable (required for PINN autograd)
-    Init   : Xavier (Glorot) — calibrated for tanh to prevent vanishing gradients
+    Hidden : n_hidden layers × n_neurons neurons  [tanh]
+    Output : T [K]                                — physical temperature
+
+    Internally the network predicts normalised temperature
+        θ = (T - T_INITIAL) / DELTA_T
+    and forward() returns T = θ * DELTA_T + T_INITIAL.
+
+    With Xavier initialisation, θ ≈ 0 initially → T ≈ T_INITIAL everywhere.
+    This is a physically meaningful starting point (cold meat, no heat yet).
 
     Parameters
     ----------
@@ -57,7 +86,10 @@ class HeatNet(nn.Module):
         self._xavier_init()
 
     def _xavier_init(self):
-        """Xavier/Glorot initialisation — optimised variance for tanh activations."""
+        """
+        Xavier/Glorot initialisation — calibrated variance for tanh.
+        Output layer bias is set to zero so initial θ ≈ 0 → T ≈ T_INITIAL.
+        """
         for layer in self.net:
             if isinstance(layer, nn.Linear):
                 nn.init.xavier_normal_(layer.weight)
@@ -65,31 +97,31 @@ class HeatNet(nn.Module):
 
     def forward(self, x_n, y_n, t_n, rho_n, cp_n, k_n):
         """
-        Forward pass through the network.
+        Forward pass.
 
         Parameters (all Tensor of shape (N, 1), normalised to [0, 1])
         ----------
-        x_n, y_n, t_n  : normalised spatial and temporal coordinates
+        x_n, y_n, t_n    : normalised spatial and temporal coordinates
         rho_n, cp_n, k_n : normalised material properties
 
         Returns
         -------
-        T : Tensor (N, 1) — predicted temperature [K]
+        T : Tensor (N, 1) — physical temperature [K]
+            Internally: θ = net(inputs),  T = θ * DELTA_T + T_INITIAL
         """
-        inp = torch.cat([x_n, y_n, t_n, rho_n, cp_n, k_n], dim=1)
-        return self.net(inp)
+        inp   = torch.cat([x_n, y_n, t_n, rho_n, cp_n, k_n], dim=1)
+        theta = self.net(inp)                          # normalised temperature θ
+        return theta * DELTA_T + T_INITIAL             # physical temperature T [K]
 
     def n_params(self):
         """Return total number of trainable parameters."""
         return sum(p.numel() for p in self.parameters() if p.requires_grad)
 
     def architecture_summary(self):
-        """Print a concise architecture summary."""
         print(f"{self.__class__.__name__}")
-        print(f"  Inputs   : 6  (x, y, t, rho, cp, k)")
-        print(f"  Hidden   : {self.n_hidden} layers × {self.n_neurons} neurons")
-        print(f"  Output   : 1  (T [K])")
-        print(f"  Activation : tanh")
+        print(f"  Inputs     : 6  (x, y, t, rho, cp, k)  — normalised")
+        print(f"  Hidden     : {self.n_hidden} layers × {self.n_neurons} neurons  [tanh]")
+        print(f"  Output     : T [K]  (internal: θ = (T-T_i)/ΔT, then reconstructed)")
         print(f"  Parameters : {self.n_params():,}")
 
 
@@ -101,16 +133,11 @@ class ANN(HeatNet):
 
     Trained on FDM simulation data using mean squared error loss.
     No physics is embedded — the model learns the input-output mapping
-    entirely from data.
+    purely from data.
 
     Loss
     ----
-    L_ANN = (1/N) Σ (T_θ(x_i) - T_FDM(x_i))²
-
-    Parameters
-    ----------
-    n_hidden  : int — number of hidden layers
-    n_neurons : int — neurons per hidden layer
+    L_ANN = (1/N) Σ (T_θ(x_i) - T_FDM(x_i))²  [K²]
     """
 
     def __init__(self, n_hidden=5, n_neurons=40):
@@ -122,12 +149,12 @@ class ANN(HeatNet):
 
         Parameters
         ----------
-        X_batch : Tensor (N, 6) — normalised inputs [x,y,t,rho,cp,k]
+        X_batch : Tensor (N, 6) — normalised inputs
         T_batch : Tensor (N, 1) — FDM temperature labels [K]
 
         Returns
         -------
-        loss : scalar Tensor
+        loss : scalar Tensor [K²]
         """
         T_pred = self.forward(
             X_batch[:, 0:1], X_batch[:, 1:2], X_batch[:, 2:3],
@@ -149,41 +176,49 @@ class PINN(HeatNet):
     --------------
     L_PINN = λ_pde · L_pde  +  λ_bc · L_bc  +  λ_ic · L_ic
 
-    L_pde : PDE residual at interior collocation points (normalised)
-    L_bc  : MSE of predictions on all four walls vs T_boundary
-    L_ic  : MSE of predictions at t = 0 vs T_initial
+    L_pde : normalised PDE residual at interior collocation points
+    L_bc  : normalised MSE on all four walls   — target: T = T_BOUNDARY
+    L_ic  : normalised MSE at t = 0            — target: T = T_INITIAL
+
+    All loss terms are normalised by DELTA_T so they are dimensionless
+    and O(1) at initialisation, making the λ weights directly comparable.
+
+    Default weights: λ_bc = λ_ic = 10, λ_pde = 1
+    Higher BC/IC weights ensure boundary and initial conditions are enforced
+    before the PDE residual is minimised. This prevents the trivial solution
+    (T = constant → zero PDE residual) from dominating early training.
 
     PDE residual (heat equation)
     ----------------------------
-    f(x) = ρ c_p ∂T/∂t  −  k (∂²T/∂x²  +  ∂²T/∂y²) ≈ 0
+    f = ρ c_p ∂T/∂t  −  k (∂²T/∂x²  +  ∂²T/∂y²) ≈ 0
 
-    Chain rule for normalised coordinates
-    --------------------------------------
-    ∂T/∂t   = ∂T/∂t̂ · (1/t_max)
-    ∂²T/∂x² = ∂²T/∂x̂² · (1/L_x²)
-    ∂²T/∂y² = ∂²T/∂ŷ² · (1/L_y²)
+    Chain rule for normalised coordinates (with output normalisation)
+    -----------------------------------------------
+    T = θ · ΔT + T_i
+    ∂T/∂t   = ΔT · ∂θ/∂t̂ / t_max
+    ∂²T/∂x² = ΔT · ∂²θ/∂x̂² / L_x²
+    ∂²T/∂y² = ΔT · ∂²θ/∂ŷ² / L_y²
 
-    All loss terms are normalised to O(1) at initialisation to prevent
-    any single term from dominating before the weights λ can take effect.
+    Substituting and dividing by (ρ c_p ΔT / t_max):
+    normalised residual = ∂θ/∂t̂  −  (k t_max)/(ρ c_p) · [∂²θ/∂x̂²/L_x² + ∂²θ/∂ŷ²/L_y²]
 
     Parameters
     ----------
     n_hidden    : int   — number of hidden layers
     n_neurons   : int   — neurons per hidden layer
-    lambda_pde  : float — weight on PDE residual loss
-    lambda_bc   : float — weight on boundary condition loss
-    lambda_ic   : float — weight on initial condition loss
+    lambda_pde  : float — PDE residual weight  (default: 1.0)
+    lambda_bc   : float — BC loss weight       (default: 10.0)
+    lambda_ic   : float — IC loss weight       (default: 10.0)
     """
 
     def __init__(self, n_hidden=5, n_neurons=40,
-                 lambda_pde=1.0, lambda_bc=1.0, lambda_ic=1.0):
+                 lambda_pde=1.0, lambda_bc=10.0, lambda_ic=10.0):
         super().__init__(n_hidden, n_neurons)
         self.lambda_pde = lambda_pde
         self.lambda_bc  = lambda_bc
         self.lambda_ic  = lambda_ic
 
     def _to_tensor(self, arr, device, req_grad=False):
-        """Convert 1D numpy array to column tensor (N,1) on device."""
         t = torch.tensor(arr, dtype=torch.float32).unsqueeze(1).to(device)
         return t.requires_grad_(req_grad)
 
@@ -193,19 +228,25 @@ class PINN(HeatNet):
         """
         Compute normalised heat equation residual via automatic differentiation.
 
-        x_n, y_n, t_n must have requires_grad=True so that autograd can
-        compute spatial and temporal derivatives through the network.
+        The network predicts θ = (T - T_INITIAL) / DELTA_T internally.
+        forward() returns T = θ * DELTA_T + T_INITIAL.
+        Autograd differentiates T — since T_INITIAL is a constant, all
+        derivatives of T equal DELTA_T × derivatives of θ. DELTA_T
+        cancels in the normalised residual.
 
+        Parameters (all Tensor (N,1), x_n/y_n/t_n require requires_grad=True)
+        -----------------------------------------------------------------------
         Returns
         -------
-        residual_norm : Tensor (N, 1) — dimensionless residual
+        residual_norm : Tensor (N,1) — dimensionless PDE residual
         """
-        T = self.forward(x_n, y_n, t_n, rho_n, cp_n, k_n)
+        T    = self.forward(x_n, y_n, t_n, rho_n, cp_n, k_n)
         ones = torch.ones_like(T)
 
-        # First-order derivatives w.r.t. normalised coordinates
+        # First-order temporal derivative
         dT_dt_n  = torch.autograd.grad(T, t_n, grad_outputs=ones,
                                         create_graph=True, retain_graph=True)[0]
+        # First-order spatial derivatives (needed for second-order)
         dT_dx_n  = torch.autograd.grad(T, x_n, grad_outputs=ones,
                                         create_graph=True, retain_graph=True)[0]
         dT_dy_n  = torch.autograd.grad(T, y_n, grad_outputs=ones,
@@ -217,15 +258,15 @@ class PINN(HeatNet):
         d2T_dy2_n = torch.autograd.grad(dT_dy_n, y_n, grad_outputs=ones,
                                          create_graph=True, retain_graph=True)[0]
 
-        # Convert to physical derivatives via chain rule
-        dT_dt   = dT_dt_n  / T_MAX
+        # Apply chain rule: physical derivatives from normalised-coord derivatives
+        dT_dt   = dT_dt_n   / T_MAX
         d2T_dx2 = d2T_dx2_n / XMAX**2
         d2T_dy2 = d2T_dy2_n / YMAX**2
 
         # Heat equation residual [W/m³]
         residual = rho * cp * dT_dt - k * (d2T_dx2 + d2T_dy2)
 
-        # Normalise: reference scale = ρ c_p ΔTΔT / t_max  [W/m³]
+        # Normalise by reference scale → dimensionless O(1)
         ref_scale = rho * cp * DELTA_T / T_MAX
         return residual / ref_scale
 
@@ -235,15 +276,15 @@ class PINN(HeatNet):
 
         Parameters
         ----------
-        col    : dict — as returned by dataset.sample_collocation_points()
-        device : str  — 'cpu' or 'cuda'
+        col    : dict — from dataset.sample_collocation_points()
+        device : str
 
         Returns
         -------
-        total  : scalar Tensor — weighted composite loss
-        L_pde  : float — unweighted PDE loss value
-        L_bc   : float — unweighted BC loss value
-        L_ic   : float — unweighted IC loss value
+        total  : scalar Tensor
+        L_pde  : float — unweighted PDE loss
+        L_bc   : float — unweighted BC loss
+        L_ic   : float — unweighted IC loss
         """
         to = lambda a, g=False: self._to_tensor(a, device, req_grad=g)
 
@@ -275,7 +316,7 @@ class PINN(HeatNet):
             to((cp_bc  - CP_MIN)  / (CP_MAX  - CP_MIN  + 1e-10)),
             to((k_bc   - K_MIN)   / (K_MAX   - K_MIN   + 1e-10)),
         )
-        # Normalise by DELTA_T so L_bc is dimensionless
+        # Normalised: θ_bc should equal 1.0  (T = T_BOUNDARY)
         L_bc = torch.mean(((T_bc - T_BOUNDARY) / DELTA_T)**2)
 
         # ── IC loss ──────────────────────────────────────────────────────────
@@ -289,6 +330,8 @@ class PINN(HeatNet):
             to((cp_ic  - CP_MIN)  / (CP_MAX  - CP_MIN  + 1e-10)),
             to((k_ic   - K_MIN)   / (K_MAX   - K_MIN   + 1e-10)),
         )
+        # Normalised: θ_ic should equal 0.0  (T = T_INITIAL)
+        # With output normalisation, initial network output θ≈0 → L_ic ≈ 0 at start
         L_ic = torch.mean(((T_ic - T_INITIAL) / DELTA_T)**2)
 
         # ── Weighted composite ────────────────────────────────────────────────

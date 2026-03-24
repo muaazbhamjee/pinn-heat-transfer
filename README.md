@@ -151,6 +151,66 @@ If both print without errors, you are ready.
 
 ---
 
+
+---
+
+## Hardware Requirements and Training Time
+
+Training the PINN is computationally intensive. Estimated runtimes for the
+full Section 7 experiment set (9 PINN training jobs):
+
+| Hardware | Estimated time |
+|----------|---------------|
+| NVIDIA GPU (CUDA) | ~20–30 minutes |
+| Apple Silicon (M1/M2/M3) | ~60–90 minutes |
+| CPU only (laptop) | ~4–8 hours |
+
+---
+
+### Option A — You have an NVIDIA GPU
+
+No changes needed. Run the notebook as-is.
+
+To confirm PyTorch can see your GPU:
+```python
+import torch
+print(torch.cuda.is_available())   # should print True
+print(torch.cuda.get_device_name(0))
+```
+
+---
+
+### Option B — CPU only (recommended: reduce epochs for Section 7)
+
+If you do not have a GPU, reduce the training epochs in the hyperparameter
+block before running Section 7:
+
+```python
+EPOCHS_ADAM  = 2000   # reduced from 10000
+EPOCHS_LBFGS = 100    # reduced from 500
+```
+
+This gives indicative results in ~1 hour. Results will be less converged
+but sufficient to observe the qualitative trends required in the report.
+Run the full epoch count once overnight for your final submission.
+
+---
+
+### Option C — Google Colab (free GPU, recommended for CPU-only users)
+
+Google Colab provides free access to a T4 GPU and requires no local installation.
+
+1. Go to https://colab.research.google.com
+2. Click **File → Upload notebook** and upload `PINN_Heat_Transfer.ipynb`
+3. Upload the `data/` and `utils/` folders using the file browser on the left
+   (click the folder icon, then upload — maintain the same folder structure)
+4. Click **Runtime → Change runtime type → T4 GPU → Save**
+5. Run the notebook as normal — training will complete in ~30 minutes
+
+> **Note:** Colab sessions disconnect after ~90 minutes of inactivity and
+> all uploaded files are lost on disconnect. Save your notebook outputs
+> frequently using **File → Save a copy in Drive**.
+
 ## Working on the Project
 
 - All your work happens in `PINN_Heat_Transfer.ipynb`
@@ -202,7 +262,7 @@ git push
 |---------|---------|
 | `ModuleNotFoundError: No module named 'utils'` | Make sure you launched Jupyter from inside the `pinn-heat-transfer/` directory |
 | `ModuleNotFoundError: No module named 'torch'` | Conda environment not activated — run `conda activate pinn-heat` |
-| Training is very slow | Normal on CPU for 10,000 epochs — reduce `EPOCHS_PINN` to 2000 for initial experiments, then run the full training once |
+| Training is very slow | See Hardware Requirements section above — use Google Colab for free GPU access, or reduce `EPOCHS_ADAM` to 2000 for initial experiments |
 | Notebook output not showing | Run `Kernel → Restart & Run All` |
 | Git merge conflict in notebook | Each group member should work on a personal branch and merge via pull request |
 

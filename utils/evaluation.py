@@ -176,14 +176,16 @@ def plot_loss_curves(loss_ann, loss_pinn,
     """
     Training and validation loss curves for ANN and PINN.
 
-    ANN panel  — train MSE vs val MSE (overfitting visible as divergence)
-    PINN panel — train total vs val total, plus individual loss components
+    ANN panel  — train MSE vs val MSE
+    PINN panel — train total vs val total + individual components
+                 A vertical dashed line marks the Adam → L-BFGS transition.
 
     Parameters
     ----------
     loss_ann  : dict with keys 'train_loss', 'val_loss'
     loss_pinn : dict with keys 'train_total', 'val_total',
-                               'train_pde', 'train_bc', 'train_ic'
+                               'train_pde', 'train_bc', 'train_ic',
+                               'phase' (list of 'adam'/'lbfgs')
     """
     fig, axes = plt.subplots(1, 2, figsize=(14, 4))
 
@@ -194,23 +196,31 @@ def plot_loss_curves(loss_ann, loss_pinn,
                      linewidth=1.8, linestyle="--", alpha=0.75, label="Validation")
     axes[0].set_title("ANN Loss", fontsize=11)
     axes[0].set_xlabel("Epoch")
-    axes[0].set_ylabel("MSE Loss")
+    axes[0].set_ylabel("MSE Loss [K²]")
     axes[0].legend(fontsize=9)
     axes[0].grid(True, alpha=0.3)
 
     # ── PINN ──────────────────────────────────────────────────────────────────
-    axes[1].semilogy(loss_pinn["train_total"], "k",
-                     linewidth=2.0, label="Train total")
-    axes[1].semilogy(loss_pinn["val_total"],   "k--",
-                     linewidth=2.0, alpha=0.6, label="Val total")
-    axes[1].semilogy(loss_pinn["train_pde"],   "--",
-                     linewidth=1.2, label=f"PDE  (λ={lambda_pde})")
-    axes[1].semilogy(loss_pinn["train_bc"],    "--",
-                     linewidth=1.2, label=f"BC   (λ={lambda_bc})")
-    axes[1].semilogy(loss_pinn["train_ic"],    "--",
-                     linewidth=1.2, label=f"IC   (λ={lambda_ic})")
-    axes[1].set_title("PINN Loss", fontsize=11)
-    axes[1].set_xlabel("Epoch")
+    phases = loss_pinn.get("phase", [])
+    # Find where L-BFGS begins (if used)
+    lbfgs_start = next((i for i, p in enumerate(phases) if p == "lbfgs"), None)
+
+    axes[1].semilogy(loss_pinn["train_total"], "k",   linewidth=2.0, label="Train total")
+    axes[1].semilogy(loss_pinn["val_total"],   "k--", linewidth=2.0, alpha=0.6,
+                     label="Val total")
+    axes[1].semilogy(loss_pinn["train_pde"],   "--",  linewidth=1.2,
+                     label=f"PDE  (λ={lambda_pde})")
+    axes[1].semilogy(loss_pinn["train_bc"],    "--",  linewidth=1.2,
+                     label=f"BC   (λ={lambda_bc})")
+    axes[1].semilogy(loss_pinn["train_ic"],    "--",  linewidth=1.2,
+                     label=f"IC   (λ={lambda_ic})")
+
+    if lbfgs_start is not None:
+        axes[1].axvline(lbfgs_start, color="gray", linestyle=":",
+                        linewidth=1.5, label="Adam → L-BFGS")
+
+    axes[1].set_title("PINN Loss (two-phase: Adam + L-BFGS)", fontsize=11)
+    axes[1].set_xlabel("Epoch / Iteration")
     axes[1].set_ylabel("Loss")
     axes[1].legend(fontsize=9)
     axes[1].grid(True, alpha=0.3)
