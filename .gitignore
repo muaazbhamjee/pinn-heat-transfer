@@ -1,0 +1,35 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb_checkpoints
+
+# Environments
+.env
+.venv
+env/
+venv/
+*.conda
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# PyTorch model checkpoints (if you save them locally — do not commit)
+*.pt
+*.pth
+
+# IDE
+.vscode/
+.idea/
+*.swp
