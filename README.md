@@ -1,8 +1,10 @@
 # PINN Heat Transfer — Weber Grill Project
 
-**Module:** Computational Fluid Dynamics  
+**Module:** MKM411 - Computational Fluid Dynamics  
 **Department:** Mechanical & Aeronautical Engineering | University of Pretoria  
-**Reference:** Raissi, M., Yazdani, A., & Karniadakis, G.E. (2020). *Hidden fluid mechanics.* Science, 367(6481), 1026–1030. https://doi.org/10.1126/science.aaw4741
+**Lecturers:** Prof Ken Craig and Prof Muaaz Bhamjee  
+**References:** Raissi, M., Yazdani, A., & Karniadakis, G.E. (2020). *Hidden fluid mechanics.* Science, 367(6481), 1026–1030. https://doi.org/10.1126/science.aaw4741  
+Raissi, M., Perdikaris, P., Karniadakis, G. E. (2019). Physics-informed neural networks: A deep learning framework for solving forward and inverse problems involving nonlinear partial differential equations. *Journal of Computational Physics*, 378, 686-707. https://doi.org/10.1016/j.jcp
 
 ---
 
@@ -78,11 +80,9 @@ installer recommends against it — use Anaconda Prompt instead).
 Open **Anaconda Prompt** (Windows) or **Terminal** (Mac) and run:
 
 ```bash
-git clone https://github.com/YOUR-INSTRUCTOR/pinn-heat-transfer.git
+git clone https://github.com/muaazbhamjee/pinn-heat-transfer.git
 cd pinn-heat-transfer
 ```
-
-Replace `YOUR-INSTRUCTOR` with the URL provided in class.
 
 ---
 
@@ -92,6 +92,8 @@ Inside the `pinn-heat-transfer` directory, run:
 
 ```bash
 conda env create -f environment.yml
+conda activate pinn-heat
+pip install -r requirements.txt -vvv
 ```
 
 This will download and install Python, PyTorch, NumPy, Matplotlib, and Jupyter.
@@ -208,5 +210,5 @@ git push
 
 ## Contact
 
-Raise technical issues via [course platform TBD].  
-For conceptual questions about PINNs, refer to the lecture slides and the Raissi et al. (2020) paper.
+Raise technical issues via email to Prof Bhamjee on muaaz.bhamjee@up.ac.za  
+For conceptual questions about PINNs, refer to the lecture slides and the Raissi et al. (2019) and (2020) papers.
