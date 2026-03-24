@@ -174,35 +174,49 @@ def evaluate_model(model, meat_name, props, fdm_data,
 def plot_loss_curves(loss_ann, loss_pinn,
                      lambda_pde=1.0, lambda_bc=1.0, lambda_ic=1.0):
     """
-    Side-by-side training loss curves for ANN and PINN.
+    Training and validation loss curves for ANN and PINN.
+
+    ANN panel  — train MSE vs val MSE (overfitting visible as divergence)
+    PINN panel — train total vs val total, plus individual loss components
 
     Parameters
     ----------
-    loss_ann  : dict with key 'loss'
-    loss_pinn : dict with keys 'total', 'pde', 'bc', 'ic'
+    loss_ann  : dict with keys 'train_loss', 'val_loss'
+    loss_pinn : dict with keys 'train_total', 'val_total',
+                               'train_pde', 'train_bc', 'train_ic'
     """
-    fig, axes = plt.subplots(1, 2, figsize=(13, 4))
+    fig, axes = plt.subplots(1, 2, figsize=(14, 4))
 
-    axes[0].semilogy(loss_ann["loss"], color="steelblue", linewidth=1.5)
-    axes[0].set_title("ANN Training Loss (MSE on FDM data)", fontsize=11)
+    # ── ANN ───────────────────────────────────────────────────────────────────
+    axes[0].semilogy(loss_ann["train_loss"], color="steelblue",
+                     linewidth=1.8, label="Train")
+    axes[0].semilogy(loss_ann["val_loss"],   color="steelblue",
+                     linewidth=1.8, linestyle="--", alpha=0.75, label="Validation")
+    axes[0].set_title("ANN Loss", fontsize=11)
     axes[0].set_xlabel("Epoch")
-    axes[0].set_ylabel("Loss")
+    axes[0].set_ylabel("MSE Loss")
+    axes[0].legend(fontsize=9)
     axes[0].grid(True, alpha=0.3)
 
-    axes[1].semilogy(loss_pinn["total"], "k",  linewidth=2.0, label="Total")
-    axes[1].semilogy(loss_pinn["pde"],   "--", linewidth=1.2,
-                     label=f"PDE  (λ={lambda_pde})")
-    axes[1].semilogy(loss_pinn["bc"],    "--", linewidth=1.2,
-                     label=f"BC   (λ={lambda_bc})")
-    axes[1].semilogy(loss_pinn["ic"],    "--", linewidth=1.2,
-                     label=f"IC   (λ={lambda_ic})")
-    axes[1].set_title("PINN Training Loss (physics only)", fontsize=11)
+    # ── PINN ──────────────────────────────────────────────────────────────────
+    axes[1].semilogy(loss_pinn["train_total"], "k",
+                     linewidth=2.0, label="Train total")
+    axes[1].semilogy(loss_pinn["val_total"],   "k--",
+                     linewidth=2.0, alpha=0.6, label="Val total")
+    axes[1].semilogy(loss_pinn["train_pde"],   "--",
+                     linewidth=1.2, label=f"PDE  (λ={lambda_pde})")
+    axes[1].semilogy(loss_pinn["train_bc"],    "--",
+                     linewidth=1.2, label=f"BC   (λ={lambda_bc})")
+    axes[1].semilogy(loss_pinn["train_ic"],    "--",
+                     linewidth=1.2, label=f"IC   (λ={lambda_ic})")
+    axes[1].set_title("PINN Loss", fontsize=11)
     axes[1].set_xlabel("Epoch")
     axes[1].set_ylabel("Loss")
     axes[1].legend(fontsize=9)
     axes[1].grid(True, alpha=0.3)
 
-    plt.suptitle("Training Loss Curves", fontsize=12, fontweight="bold")
+    plt.suptitle("Training and Validation Loss Curves", fontsize=12,
+                 fontweight="bold")
     plt.tight_layout()
     plt.show()
 

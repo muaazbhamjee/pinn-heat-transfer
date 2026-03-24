@@ -78,7 +78,7 @@ installer recommends against it — use Anaconda Prompt instead).
 Open **Anaconda Prompt** (Windows) or **Terminal** (Mac) and run:
 
 ```bash
-git clone https://github.com/muaazbhamjee/pinn-heat-transfer.git
+git clone https://github.com/YOUR-INSTRUCTOR/pinn-heat-transfer.git
 cd pinn-heat-transfer
 ```
 
