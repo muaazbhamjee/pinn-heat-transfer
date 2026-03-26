@@ -39,7 +39,7 @@ pinn-heat-transfer/
 │   ├── training.py          ← train_ann, train_pinn functions
 │   └── evaluation.py        ← prediction, benchmarking, plotting
 │
-├── generate_dataset.py      ← INSTRUCTOR TOOL — do not modify or run
+├── generate_dataset.py      ← FDM solver used to generate the training datasets. Read it to understand how the data was produced, but do not run it — the datasets are already provided in data/.
 ├── PINN_Heat_Transfer.ipynb ← your working notebook
 ├── environment.yml          ← Anaconda environment specification
 ├── .gitignore
@@ -216,7 +216,7 @@ Google Colab provides free access to a T4 GPU and requires no local installation
 - All your work happens in `PINN_Heat_Transfer.ipynb`
 - The `utils/` folder contains the model and training code — **read it, understand it,
   but do not modify it** unless instructed (your report must explain what is in these files)
-- `generate_dataset.py` is an instructor tool — do not run or modify it
+- `generate_dataset.py` FDM solver used to generate the training datasets. Read it to understand how the data was produced, but do not run it — the datasets are already provided in data/.
 - The `data/` folder is pre-populated — do not delete or modify the `.npz` files
 
 ---
