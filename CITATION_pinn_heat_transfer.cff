@@ -1,0 +1,74 @@
+cff-version: 1.2.0
+title: "MKM411 PINN Heat Transfer — Physics-Informed Neural Networks for Unsteady Heat Transfer"
+message: "If you use this repository in your research or teaching, please cite it as below."
+type: software
+version: 1.0.0
+date-released: 2025-04-01
+license: GPL-3.0
+repository-code: https://github.com/muaazbhamjee/pinn-heat-transfer
+
+authors:
+  - family-names: Bhamjee
+    given-names: Muaaz
+    affiliation: "Department of Mechanical and Aeronautical Engineering, University of Pretoria"
+    email: muaaz.bhamjee@up.ac.za
+    orcid: https://orcid.org/0000-0000-0000-0000
+
+  - family-names: Craig
+    given-names: Kenneth John
+    affiliation: "Department of Mechanical and Aeronautical Engineering, University of Pretoria"
+    orcid: https://orcid.org/0000-0000-0000-0000
+
+abstract: >
+  An open-source educational framework for the MKM411 Computational Fluid Dynamics
+  module at the University of Pretoria. Students implement, train, and benchmark a
+  parametric Physics-Informed Neural Network (PINN) for two-dimensional unsteady
+  heat conduction, comparing predictions against analytical (Fourier series), numerical
+  (finite difference method), and commercial CFD (ANSYS Fluent) solutions on the same
+  physical problem. Material properties are treated as network inputs, making the model
+  a genuine parametric surrogate. Students train on beef, chicken, and pork, and evaluate
+  generalisation on an unseen test material (lamb), directly demonstrating the advantage
+  of physics-constrained learning over purely data-driven approaches.
+
+keywords:
+  - physics-informed neural networks
+  - scientific machine learning
+  - computational fluid dynamics
+  - heat transfer
+  - surrogate modelling
+  - engineering education
+  - PyTorch
+  - undergraduate education
+  - University of Pretoria
+
+references:
+  - type: article
+    title: "Physics-informed neural networks: A deep learning framework for solving forward and inverse problems involving nonlinear PDEs"
+    authors:
+      - family-names: Raissi
+        given-names: Maziar
+      - family-names: Perdikaris
+        given-names: Paris
+      - family-names: Karniadakis
+        given-names: George Em
+    journal: "Journal of Computational Physics"
+    volume: 378
+    pages: "686-707"
+    year: 2019
+    doi: 10.1016/j.jcp.2018.10.045
+
+  - type: article
+    title: "Hidden fluid mechanics: Learning velocity and pressure fields from flow visualizations"
+    authors:
+      - family-names: Raissi
+        given-names: Maziar
+      - family-names: Yazdani
+        given-names: Alireza
+      - family-names: Karniadakis
+        given-names: George Em
+    journal: Science
+    volume: 367
+    issue: 6481
+    pages: "1026-1030"
+    year: 2020
+    doi: 10.1126/science.aaw4741
