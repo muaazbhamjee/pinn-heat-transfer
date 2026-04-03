@@ -20,6 +20,33 @@ This repository contains everything you need to run the project.
 
 ---
 
+## Learning Outcomes
+
+This repository supports the SciML component of MKM411. On completing the
+associated lectures and this project component, you will be able to:
+
+- Derive and implement the PINN loss function for the 2D unsteady heat equation,
+  embedding the governing PDE, boundary conditions, and initial condition via
+  automatic differentiation
+- Train both a data-driven ANN and a PINN in PyTorch and interpret their training
+  and validation loss curves
+- Conduct systematic hyperparameter experiments — varying network depth, learning
+  rate, and loss weights — and provide physically grounded explanations for
+  observed trends
+- Benchmark PINN and ANN predictions quantitatively against FDM and exact Fourier
+  solutions across multiple material types
+- Evaluate model generalisation to an unseen material and explain, from first
+  principles, why physics-constrained learning outperforms a purely data-driven
+  approach on out-of-distribution inputs
+- Critically compare all solution paradigms — analytical, FDM, ANN, PINN, and
+  commercial CFD — across accuracy, computational cost, data requirements, and
+  interpretability
+
+For the full set of lecture learning outcomes, see the
+[lecture repository](https://github.com/muaazbhamjee/mkm411-sciml-lectures).
+
+---
+
 ## Repository Structure
 
 ```
