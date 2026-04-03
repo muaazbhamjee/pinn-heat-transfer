@@ -3,7 +3,7 @@ title: "MKM411 PINN Heat Transfer — Physics-Informed Neural Networks for Unste
 message: "If you use this repository in your research or teaching, please cite it as below."
 type: software
 version: 1.0.0
-date-released: 2025-04-01
+date-released: 2026-04-01
 license: GPL-3.0
 repository-code: https://github.com/muaazbhamjee/pinn-heat-transfer
 
@@ -12,12 +12,12 @@ authors:
     given-names: Muaaz
     affiliation: "Department of Mechanical and Aeronautical Engineering, University of Pretoria"
     email: muaaz.bhamjee@up.ac.za
-    orcid: https://orcid.org/0000-0000-0000-0000
+    orcid: https://orcid.org/0000-0002-2697-4589
 
   - family-names: Craig
-    given-names: Kenneth John
+    given-names: Ken J
     affiliation: "Department of Mechanical and Aeronautical Engineering, University of Pretoria"
-    orcid: https://orcid.org/0000-0000-0000-0000
+    orcid: https://orcid.org/0000-0002-7960-2148
 
 abstract: >
   An open-source educational framework for the MKM411 Computational Fluid Dynamics
