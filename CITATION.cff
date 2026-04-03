@@ -3,7 +3,7 @@ title: "MKM411 PINN Heat Transfer — Physics-Informed Neural Networks for Unste
 message: "If you use this repository in your research or teaching, please cite it as below."
 type: software
 version: 1.0.0
-date-released: 2025-04-01
+date-released: 2026-04-01
 license: GPL-3.0
 repository-code: https://github.com/muaazbhamjee/pinn-heat-transfer
 
