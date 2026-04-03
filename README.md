@@ -268,6 +268,28 @@ git push
 
 ---
 
+## Citation
+
+If you use this repository in your research or teaching, please cite it using the
+reference in `CITATION.cff` or the following:
+
+> Bhamjee, M., & Craig, K.J. (2025). *MKM411 PINN Heat Transfer — Physics-Informed
+> Neural Networks for Unsteady Heat Transfer* [Software]. University of Pretoria.
+> https://github.com/muaazbhamjee/pinn-heat-transfer
+
+This work is grounded in the following seminal papers:
+
+> Raissi, M., Perdikaris, P., & Karniadakis, G.E. (2019). Physics-informed neural
+> networks: A deep learning framework for solving forward and inverse problems
+> involving nonlinear PDEs. *Journal of Computational Physics*, 378, 686–707.
+> https://doi.org/10.1016/j.jcp.2018.10.045
+
+> Raissi, M., Yazdani, A., & Karniadakis, G.E. (2020). Hidden fluid mechanics:
+> Learning velocity and pressure fields from flow visualizations. *Science*,
+> 367(6481), 1026–1030. https://doi.org/10.1126/science.aaw4741
+
+---
+
 ## Contact
 
 Raise technical issues via email to Prof Bhamjee on muaaz.bhamjee@up.ac.za  
