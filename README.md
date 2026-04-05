@@ -317,6 +317,21 @@ This work is grounded in the following seminal papers:
 
 ---
 
+## Attribution:
+
+During development, the following AI-assisted tools were used:
+
+* Claude AI (Anthropic):
+  * debugging 
+  * architecture decisions
+  * physics implementation guidance
+  * code generation and review
+  * documentation
+
+All research questions, pedagogical design decisions, theoretical contributions, and experimental results are the authors' own. 
+
+---
+
 ## Contact
 
 Raise technical issues via email to Prof Bhamjee on muaaz.bhamjee@up.ac.za  
