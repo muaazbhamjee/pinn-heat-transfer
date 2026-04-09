@@ -332,6 +332,12 @@ All research questions, pedagogical design decisions, theoretical contributions,
 
 ---
 
+## Licence
+
+Released under the [GNU General Public Licence v3.0](LICENSE) — you are free to use, modify, and redistribute it under the same licence terms.
+
+---
+
 ## Contact
 
 Raise technical issues via email to Prof Bhamjee on muaaz.bhamjee@up.ac.za  
